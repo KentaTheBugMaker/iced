@@ -797,6 +797,10 @@ where
         Event::Keyboard(keyboard::Event::IMEPreedit(text)) => {
             let state = state();
 
+            if !state.is_focused {
+                return event::Status::Ignored;
+            }
+
             let cursor_offset = state.cursor.start(value);
 
             // limit borrow life time.

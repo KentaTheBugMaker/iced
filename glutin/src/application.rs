@@ -321,6 +321,7 @@ async fn run_instance<A, E, C>(
 
                 context.window().request_redraw();
             }
+            /*
             event::Event::PlatformSpecific(event::PlatformSpecific::MacOS(
                 event::MacOS::ReceivedUrl(url),
             )) => {
@@ -330,7 +331,7 @@ async fn run_instance<A, E, C>(
                         url,
                     )),
                 ));
-            }
+            }*/
             event::Event::UserEvent(message) => {
                 messages.push(message);
             }

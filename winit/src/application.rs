@@ -17,19 +17,16 @@ use crate::futures::futures;
 use crate::futures::{Executor, Runtime, Subscription};
 use crate::graphics::compositor::{self, Compositor};
 use crate::ime::IME;
-use crate::mouse;
-use crate::renderer;
 use crate::runtime::clipboard;
+use crate::runtime::ime;
 use crate::runtime::program::Program;
 use crate::runtime::user_interface::{self, UserInterface};
 use crate::runtime::{Command, Debug};
 use crate::style::application::{Appearance, StyleSheet};
-use crate::widget::operation;
-use crate::{Clipboard, Error, Proxy, Settings};
-use crate::{
-    Command, Debug, Error, Event, Executor, Proxy, Runtime, Settings, Size,
-    Subscription,
-};
+use crate::Clipboard;
+use crate::Error;
+use crate::Proxy;
+use crate::Settings;
 
 use futures::channel::mpsc;
 
@@ -296,7 +293,7 @@ async fn run_instance<A, E, C>(
     let mut state = State::new(&application, &window);
     let mut viewport_version = state.viewport_version();
     let physical_size = state.physical_size();
-
+    let ime = IME::new();
     let mut clipboard = Clipboard::connect(&window);
     let mut cache = user_interface::Cache::default();
     let mut surface = compositor.create_surface(
@@ -744,13 +741,13 @@ pub fn run_command<A, E>(
                 }
             },
             command::Action::IME(action) => match action {
-                iced_native::ime::Action::Allow(allow) => {
+                ime::Action::Allow(allow) => {
                     ime.set_ime_allowed(allow);
                 }
-                iced_native::ime::Action::Position(x, y) => {
+                ime::Action::Position(x, y) => {
                     ime.set_ime_position(x, y);
                 }
-                iced_native::ime::Action::Unlock => {
+                ime::Action::Unlock => {
                     ime.unlock_set_ime_allowed();
                 }
             },

@@ -2,6 +2,7 @@ mod controls;
 mod scene;
 
 use controls::Controls;
+use iced_winit::ime::IME;
 use scene::Scene;
 
 use iced_wgpu::graphics::Viewport;
@@ -154,7 +155,7 @@ pub fn main() {
     event_loop.run(move |event, _, control_flow| {
         // You should change this if you want to render continuosly
         *control_flow = ControlFlow::Wait;
-
+        let ime =IME::new();
         match event {
             Event::WindowEvent { event, .. } => {
                 match event {
@@ -196,11 +197,13 @@ pub fn main() {
                         &Theme::Dark,
                         &renderer::Style { text_color: Color::WHITE },
                         &mut clipboard,
+                        & ime,
                         &mut debug,
                     );
 
                     // and request a redraw
                     window.request_redraw();
+                    ime.apply_request(&window);
                 }
             }
             Event::RedrawRequested(_) => {

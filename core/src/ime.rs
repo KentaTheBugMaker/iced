@@ -1,9 +1,8 @@
 //! Access the IME.
-use std::fmt;
 
-///
+/// This trait abstract IME and arbitrate request of TextInputs.
 pub trait IME {
-    ///
+    /// setting the IME position.
     fn set_ime_position(&self, x: i32, y: i32);
 
     /// need to call if clicked position is  widget's region.
@@ -59,29 +58,4 @@ impl IME for Null {
     fn unlock_set_ime_allowed(&self) {}
     #[cfg(target_os = "macos")]
     fn set_ime_position_with_reenable(&self, x: i32, y: i32) {}
-}
-
-/// A IME action to be performed by some [`Command`].
-///
-/// [`Command`]: crate::Command
-pub enum Action {
-    ///
-    Allow(bool),
-
-    ///
-    Position(i32, i32),
-    ///
-    Unlock,
-}
-
-impl fmt::Debug for Action {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Action::Allow(_) => {
-                write!(f, "Action::Allow")
-            }
-            Action::Position(_, _) => write!(f, "Action::SetPosition"),
-            Action::Unlock => write!(f, "Action::Unlock"),
-        }
-    }
 }

@@ -1,12 +1,12 @@
 use crate::event::{self, Event};
+use crate::layout;
 use crate::mouse;
 use crate::overlay;
 use crate::renderer;
 use crate::widget;
 use crate::widget::tree::{self, Tree};
-use crate::{layout, IME};
 use crate::{
-    Clipboard, Color, Layout, Length, Point, Rectangle, Shell, Widget,
+    Clipboard, Color, Layout, Length, Point, Rectangle, Shell, Widget, IME,
 };
 
 use std::any::Any;

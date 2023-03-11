@@ -10,7 +10,7 @@ use crate::core::text;
 use crate::core::widget::Tree;
 use crate::core::{
     Clipboard, Element, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
-    Vector, Widget,
+    Vector, Widget, IME,
 };
 use crate::Text;
 
@@ -139,6 +139,7 @@ where
         cursor_position: Point,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
+        ime: &dyn IME,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         self.content.as_widget_mut().on_event(
@@ -148,6 +149,7 @@ where
             cursor_position,
             renderer,
             clipboard,
+            ime,
             shell,
         )
     }

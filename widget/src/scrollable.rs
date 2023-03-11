@@ -11,7 +11,7 @@ use crate::core::widget::operation::{self, Operation};
 use crate::core::widget::tree::{self, Tree};
 use crate::core::{
     Background, Clipboard, Color, Element, Layout, Length, Pixels, Point,
-    Rectangle, Shell, Size, Vector, Widget,
+    Rectangle, Shell, Size, Vector, Widget, IME,
 };
 use crate::runtime::Command;
 
@@ -223,6 +223,7 @@ where
         cursor_position: Point,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
+        ime: &dyn IME,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         update(
@@ -243,6 +244,7 @@ where
                     cursor_position,
                     renderer,
                     clipboard,
+                    ime,
                     shell,
                 )
             },

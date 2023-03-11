@@ -18,7 +18,7 @@ use crate::core::widget::tree::{self, Tree};
 use crate::core::widget::{self, Widget};
 use crate::core::Element;
 use crate::core::{
-    self, Clipboard, Hasher, Length, Point, Rectangle, Shell, Size,
+    self, Clipboard, Hasher, Length, Point, Rectangle, Shell, Size, IME,
 };
 
 use ouroboros::self_referencing;
@@ -181,6 +181,7 @@ where
         cursor_position: Point,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
+        ime: &dyn IME,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         self.with_element_mut(|element| {
@@ -191,6 +192,7 @@ where
                 cursor_position,
                 renderer,
                 clipboard,
+                ime,
                 shell,
             )
         })
@@ -371,6 +373,7 @@ where
         cursor_position: Point,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
+        ime: &dyn IME,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         self.with_overlay_mut_maybe(|overlay| {
@@ -380,6 +383,7 @@ where
                 cursor_position,
                 renderer,
                 clipboard,
+                ime,
                 shell,
             )
         })

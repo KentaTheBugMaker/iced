@@ -5,7 +5,7 @@ use crate::core::mouse;
 use crate::core::renderer;
 use crate::core::widget;
 use crate::core::window;
-use crate::core::{Clipboard, Point, Rectangle, Size, Vector};
+use crate::core::{Clipboard, Point, Rectangle, Size, Vector, IME};
 use crate::core::{Element, Layout, Shell};
 
 /// A set of interactive graphical elements with a specific [`Layout`].
@@ -177,6 +177,7 @@ where
         cursor_position: Point,
         renderer: &mut Renderer,
         clipboard: &mut dyn Clipboard,
+        ime: &dyn IME,
         messages: &mut Vec<Message>,
     ) -> (State, Vec<event::Status>) {
         use std::mem::ManuallyDrop;
@@ -207,6 +208,7 @@ where
                     cursor_position,
                     renderer,
                     clipboard,
+                    ime,
                     &mut shell,
                 );
 
@@ -291,6 +293,7 @@ where
                     base_cursor,
                     renderer,
                     clipboard,
+                    ime,
                     &mut shell,
                 );
 

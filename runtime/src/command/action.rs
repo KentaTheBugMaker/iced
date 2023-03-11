@@ -1,9 +1,9 @@
 use crate::clipboard;
 use crate::core::widget;
 use crate::font;
+use crate::ime;
 use crate::system;
 use crate::window;
-
 use iced_futures::MaybeSend;
 
 use std::borrow::Cow;
@@ -38,6 +38,7 @@ pub enum Action<T> {
         /// The message to produce when the font has been loaded.
         tagger: Box<dyn Fn(Result<(), font::Error>) -> T>,
     },
+    IME(ime::Action),
 }
 
 impl<T> Action<T> {
@@ -66,6 +67,7 @@ impl<T> Action<T> {
                 bytes,
                 tagger: Box::new(move |result| f(tagger(result))),
             },
+            Self::IME(action) => Action::IME(action),
         }
     }
 }
@@ -81,6 +83,9 @@ impl<T> fmt::Debug for Action<T> {
             Self::System(action) => write!(f, "Action::System({action:?})"),
             Self::Widget(_action) => write!(f, "Action::Widget"),
             Self::LoadFont { .. } => write!(f, "Action::LoadFont"),
+            Self::IME(action) => {
+                write!(f, "Action::IME({action:?})")
+            }
         }
     }
 }

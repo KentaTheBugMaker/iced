@@ -14,7 +14,7 @@ use crate::core::touch;
 use crate::core::widget::tree::{self, Tree};
 use crate::core::{
     Background, Clipboard, Color, Element, Length, Pixels, Point, Rectangle,
-    Shell, Size, Widget,
+    Shell, Size, Widget, IME,
 };
 
 /// An vertical bar and a handle that selects a single value from a range of
@@ -183,6 +183,7 @@ where
         cursor_position: Point,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
+        _ime: &dyn IME,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         update(

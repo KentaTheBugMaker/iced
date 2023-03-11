@@ -181,7 +181,7 @@ mod toast {
     use iced::advanced::overlay;
     use iced::advanced::renderer;
     use iced::advanced::widget::{self, Operation, Tree};
-    use iced::advanced::{Clipboard, Shell, Widget};
+    use iced::advanced::{Clipboard, Shell, Widget, IME};
     use iced::event::{self, Event};
     use iced::mouse;
     use iced::theme;

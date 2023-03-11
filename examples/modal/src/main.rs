@@ -182,10 +182,11 @@ mod modal {
     use iced::advanced::overlay;
     use iced::advanced::renderer;
     use iced::advanced::widget::{self, Widget};
-    use iced::advanced::{self, Clipboard, Shell};
+    use iced::advanced::{self, Clipboard, Shell, IME};
     use iced::alignment::Alignment;
     use iced::event;
     use iced::mouse;
+
     use iced::{Color, Element, Event, Length, Point, Rectangle, Size};
 
     /// A widget that centers a modal element over some base element

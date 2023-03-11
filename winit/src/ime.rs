@@ -1,9 +1,7 @@
 //! Access to winit ime related things.
 use std::sync::RwLock;
 
-use crate::command::{self, Command};
-pub use iced_native::clipboard::Action;
-
+use crate::runtime::{command, ime, Command};
 use winit::window::Window;
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
@@ -111,7 +109,7 @@ impl IME {
     }
 }
 
-impl iced_native::ime::IME for IME {
+impl crate::core::ime::IME for IME {
     fn set_ime_position(&self, x: i32, y: i32) {
         self.set_ime_position(x, y);
     }
@@ -153,19 +151,15 @@ impl iced_native::ime::IME for IME {
 
 /// allow input by ime or not.
 pub fn set_ime_allowed<Message>(allowed: bool) -> Command<Message> {
-    Command::single(command::Action::IME(iced_native::ime::Action::Allow(
-        allowed,
-    )))
+    Command::single(command::Action::IME(ime::Action::Allow(allowed)))
 }
 
 /// allow input by ime or not.
 pub fn unlock_set_ime_allowed<Message>() -> Command<Message> {
-    Command::single(command::Action::IME(iced_native::ime::Action::Unlock))
+    Command::single(command::Action::IME(ime::Action::Unlock))
 }
 
 /// set the logical position of IME candidate window.
 pub fn set_position<Message>(x: i32, y: i32) -> Command<Message> {
-    Command::single(command::Action::IME(iced_native::ime::Action::Position(
-        x, y,
-    )))
+    Command::single(command::Action::IME(ime::Action::Position(x, y)))
 }

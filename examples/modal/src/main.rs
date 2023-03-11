@@ -259,6 +259,7 @@ mod modal {
             cursor_position: Point,
             renderer: &Renderer,
             clipboard: &mut dyn Clipboard,
+            ime: &dyn IME,
             shell: &mut Shell<'_, Message>,
         ) -> event::Status {
             self.base.as_widget_mut().on_event(
@@ -268,6 +269,7 @@ mod modal {
                 cursor_position,
                 renderer,
                 clipboard,
+                ime,
                 shell,
             )
         }
@@ -382,6 +384,7 @@ mod modal {
             cursor_position: Point,
             renderer: &Renderer,
             clipboard: &mut dyn Clipboard,
+            ime: &dyn IME,
             shell: &mut Shell<'_, Message>,
         ) -> event::Status {
             let content_bounds = layout.children().next().unwrap().bounds();
@@ -405,6 +408,7 @@ mod modal {
                 cursor_position,
                 renderer,
                 clipboard,
+                ime,
                 shell,
             )
         }

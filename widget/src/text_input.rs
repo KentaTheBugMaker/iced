@@ -471,7 +471,7 @@ where
                             find_cursor_position(
                                 renderer,
                                 text_layout.bounds(),
-                                font.clone(),
+                                font,
                                 size,
                                 &value,
                                 state,
@@ -499,7 +499,7 @@ where
                             let position = find_cursor_position(
                                 renderer,
                                 text_layout.bounds(),
-                                font.clone(),
+                                font,
                                 size,
                                 value,
                                 state,
@@ -577,7 +577,7 @@ where
                 let position = find_cursor_position(
                     renderer,
                     text_layout.bounds(),
-                    font.clone(),
+                    font,
                     size,
                     &value,
                     state,
@@ -849,11 +849,8 @@ where
                         layout.children().next().unwrap().bounds();
                     let size = size.unwrap_or_else(|| renderer.default_size());
 
-                    let width = renderer.measure_width(
-                        &editor.contents(),
-                        size,
-                        font.clone(),
-                    );
+                    let width =
+                        renderer.measure_width(&editor.contents(), size, font);
                     let (x, y) = (
                         (text_bounds.x + width) as i32,
                         (text_bounds.y) as i32 + size as i32,
@@ -1123,7 +1120,7 @@ pub fn draw<Renderer>(
             },
             size,
             color,
-            font: font.clone(),
+            font,
             horizontal_alignment: alignment::Horizontal::Left,
             vertical_alignment: alignment::Vertical::Center,
         };

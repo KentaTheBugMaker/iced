@@ -129,7 +129,7 @@ where
     /// #     pub fn view(&self) -> iced_core::Element<(), Renderer> { unimplemented!() }
     /// #     pub fn update(&mut self, _: ()) {}
     /// # }
-    /// use iced_runtime::core::{clipboard, Size, Point};
+    /// use iced_runtime::core::{clipboard, Size, Point,ime};
     /// use iced_runtime::user_interface::{self, UserInterface};
     /// use iced_wgpu::Renderer;
     ///
@@ -153,13 +153,14 @@ where
     ///         cache,
     ///         &mut renderer,
     ///     );
-    ///
+    ///     let ime=ime::Null;
     ///     // Update the user interface
     ///     let (state, event_statuses) = user_interface.update(
     ///         &events,
     ///         cursor_position,
     ///         &mut renderer,
     ///         &mut clipboard,
+    ///         &ime,
     ///         &mut messages
     ///     );
     ///
@@ -362,12 +363,11 @@ where
     /// #     pub fn view(&self) -> Element<(), Renderer> { unimplemented!() }
     /// #     pub fn update(&mut self, _: ()) {}
     /// # }
-    /// use iced_runtime::core::clipboard;
+    /// use iced_runtime::core::{clipboard,ime};
     /// use iced_runtime::core::renderer;
     /// use iced_runtime::core::{Element, Size, Point};
     /// use iced_runtime::user_interface::{self, UserInterface};
     /// use iced_wgpu::{Renderer, Theme};
-    ///
     /// let mut counter = Counter::new();
     /// let mut cache = user_interface::Cache::new();
     /// let mut renderer = Renderer::new();
@@ -380,7 +380,7 @@ where
     ///
     /// loop {
     ///     // Obtain system events...
-    ///
+    ///     let ime =ime::Null;
     ///     let mut user_interface = UserInterface::build(
     ///         counter.view(),
     ///         window_size,
@@ -394,6 +394,7 @@ where
     ///         cursor_position,
     ///         &mut renderer,
     ///         &mut clipboard,
+    ///         &ime,
     ///         &mut messages
     ///     );
     ///

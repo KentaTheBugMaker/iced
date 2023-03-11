@@ -1,8 +1,10 @@
 //! Write a graphics backend.
-use iced_native::image;
-use iced_native::svg;
-use iced_native::text;
-use iced_native::{Font, Point, Size};
+use iced_core::image;
+use iced_core::svg;
+use iced_core::text;
+use iced_core::{Font, Point, Size};
+
+use std::borrow::Cow;
 
 /// The graphics backend of a [`Renderer`].
 ///
@@ -30,6 +32,9 @@ pub trait Text {
     ///
     /// [`ICON_FONT`]: Self::ICON_FONT
     const ARROW_DOWN_ICON: char;
+
+    /// Returns the default [`Font`].
+    fn default_font(&self) -> Font;
 
     /// Returns the default size of text.
     fn default_size(&self) -> f32;
@@ -61,6 +66,9 @@ pub trait Text {
         point: Point,
         nearest_only: bool,
     ) -> Option<text::Hit>;
+
+    /// Loads a [`Font`] from its bytes.
+    fn load_font(&mut self, font: Cow<'static, [u8]>);
 }
 
 /// A graphics backend that supports image rendering.

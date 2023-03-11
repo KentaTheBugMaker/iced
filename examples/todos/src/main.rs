@@ -1,6 +1,7 @@
 use iced::alignment::{self, Alignment};
 use iced::event::{self, Event};
-use iced::keyboard;
+use iced::font::{self, Font};
+use iced::keyboard::{self, KeyCode, Modifiers};
 use iced::subscription;
 use iced::theme::{self, Theme};
 use iced::widget::{
@@ -9,7 +10,7 @@ use iced::widget::{
 };
 use iced::window;
 use iced::{Application, Element};
-use iced::{Color, Command, Font, Length, Settings, Subscription};
+use iced::{Color, Command, Length, Settings, Subscription};
 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -44,12 +45,14 @@ struct State {
 #[derive(Debug, Clone)]
 enum Message {
     Loaded(Result<SavedState, LoadError>),
+    FontLoaded(Result<(), font::Error>),
     Saved(Result<(), SaveError>),
     InputChanged(String),
     CreateTask,
     FilterChanged(Filter),
     TaskMessage(usize, TaskMessage),
     TabPressed { shift: bool },
+    ToggleFullscreen(window::Mode),
 }
 
 impl Application for Todos {
@@ -61,7 +64,11 @@ impl Application for Todos {
     fn new(_flags: ()) -> (Todos, Command<Message>) {
         (
             Todos::Loading,
-            Command::perform(SavedState::load(), Message::Loaded),
+            Command::batch(vec![
+                font::load(include_bytes!("../fonts/icons.ttf").as_slice())
+                    .map(Message::FontLoaded),
+                Command::perform(SavedState::load(), Message::Loaded),
+            ]),
         )
     }
 
@@ -155,6 +162,9 @@ impl Application for Todos {
                         } else {
                             widget::focus_next()
                         }
+                    }
+                    Message::ToggleFullscreen(mode) => {
+                        window::change_mode(mode)
                     }
                     _ => Command::none(),
                 };
@@ -266,6 +276,21 @@ impl Application for Todos {
             ) => Some(Message::TabPressed {
                 shift: modifiers.shift(),
             }),
+            (
+                Event::Keyboard(keyboard::Event::KeyPressed {
+                    key_code,
+                    modifiers: Modifiers::SHIFT,
+                }),
+                event::Status::Ignored,
+            ) => match key_code {
+                KeyCode::Up => {
+                    Some(Message::ToggleFullscreen(window::Mode::Fullscreen))
+                }
+                KeyCode::Down => {
+                    Some(Message::ToggleFullscreen(window::Mode::Windowed))
+                }
+                _ => None,
+            },
             _ => None,
         })
     }
@@ -384,7 +409,7 @@ fn view_controls(tasks: &[Task], current_filter: Filter) -> Element<Message> {
     let tasks_left = tasks.iter().filter(|task| !task.completed).count();
 
     let filter_button = |label, filter, current_filter| {
-        let label = text(label).size(16);
+        let label = text(label);
 
         let button = button(label).style(if filter == current_filter {
             theme::Button::Primary
@@ -401,8 +426,7 @@ fn view_controls(tasks: &[Task], current_filter: Filter) -> Element<Message> {
             tasks_left,
             if tasks_left == 1 { "task" } else { "tasks" }
         ))
-        .width(Length::Fill)
-        .size(16),
+        .width(Length::Fill),
         row![
             filter_button("All", Filter::All, current_filter),
             filter_button("Active", Filter::Active, current_filter),
@@ -466,10 +490,7 @@ fn empty_message(message: &str) -> Element<'_, Message> {
 }
 
 // Fonts
-const ICONS: Font = Font::External {
-    name: "Icons",
-    bytes: include_bytes!("../../todos/fonts/icons.ttf"),
-};
+const ICONS: Font = Font::Name("Iced-Todos-Icons");
 
 fn icon(unicode: char) -> Text<'static> {
     text(unicode.to_string())

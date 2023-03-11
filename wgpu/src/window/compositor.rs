@@ -1,9 +1,12 @@
-use crate::{Backend, Color, Error, Renderer, Settings, Viewport};
+//! Connect a window with a renderer.
+use crate::core::Color;
+use crate::graphics;
+use crate::graphics::compositor;
+use crate::graphics::{Error, Primitive, Viewport};
+use crate::{Backend, Renderer, Settings};
 
 use futures::stream::{self, StreamExt};
 
-use iced_graphics::compositor;
-use iced_native::futures;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 
 use std::marker::PhantomData;
@@ -16,14 +19,11 @@ pub struct Compositor<Theme> {
     adapter: wgpu::Adapter,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    staging_belt: wgpu::util::StagingBelt,
     format: wgpu::TextureFormat,
     theme: PhantomData<Theme>,
 }
 
 impl<Theme> Compositor<Theme> {
-    const CHUNK_SIZE: u64 = 10 * 1024;
-
     /// Requests a new [`Compositor`] with the given [`Settings`].
     ///
     /// Returns `None` if no compatible graphics adapter could be found.
@@ -98,15 +98,12 @@ impl<Theme> Compositor<Theme> {
             .next()
             .await?;
 
-        let staging_belt = wgpu::util::StagingBelt::new(Self::CHUNK_SIZE);
-
         Some(Compositor {
             instance,
             settings,
             adapter,
             device,
             queue,
-            staging_belt,
             format,
             theme: PhantomData,
         })
@@ -114,11 +111,82 @@ impl<Theme> Compositor<Theme> {
 
     /// Creates a new rendering [`Backend`] for this [`Compositor`].
     pub fn create_backend(&self) -> Backend {
-        Backend::new(&self.device, self.settings, self.format)
+        Backend::new(&self.device, &self.queue, self.settings, self.format)
     }
 }
 
-impl<Theme> iced_graphics::window::Compositor for Compositor<Theme> {
+/// Creates a [`Compositor`] and its [`Backend`] for the given [`Settings`] and
+/// window.
+pub fn new<Theme, W: HasRawWindowHandle + HasRawDisplayHandle>(
+    settings: Settings,
+    compatible_window: Option<&W>,
+) -> Result<(Compositor<Theme>, Backend), Error> {
+    let compositor = futures::executor::block_on(Compositor::request(
+        settings,
+        compatible_window,
+    ))
+    .ok_or(Error::GraphicsAdapterNotFound)?;
+
+    let backend = compositor.create_backend();
+
+    Ok((compositor, backend))
+}
+
+/// Presents the given primitives with the given [`Compositor`] and [`Backend`].
+pub fn present<Theme, T: AsRef<str>>(
+    compositor: &mut Compositor<Theme>,
+    backend: &mut Backend,
+    surface: &mut wgpu::Surface,
+    primitives: &[Primitive],
+    viewport: &Viewport,
+    background_color: Color,
+    overlay: &[T],
+) -> Result<(), compositor::SurfaceError> {
+    match surface.get_current_texture() {
+        Ok(frame) => {
+            let mut encoder = compositor.device.create_command_encoder(
+                &wgpu::CommandEncoderDescriptor {
+                    label: Some("iced_wgpu encoder"),
+                },
+            );
+
+            let view = &frame
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
+
+            backend.present(
+                &compositor.device,
+                &compositor.queue,
+                &mut encoder,
+                Some(background_color),
+                view,
+                primitives,
+                viewport,
+                overlay,
+            );
+
+            // Submit work
+            let _submission = compositor.queue.submit(Some(encoder.finish()));
+            frame.present();
+
+            Ok(())
+        }
+        Err(error) => match error {
+            wgpu::SurfaceError::Timeout => {
+                Err(compositor::SurfaceError::Timeout)
+            }
+            wgpu::SurfaceError::Outdated => {
+                Err(compositor::SurfaceError::Outdated)
+            }
+            wgpu::SurfaceError::Lost => Err(compositor::SurfaceError::Lost),
+            wgpu::SurfaceError::OutOfMemory => {
+                Err(compositor::SurfaceError::OutOfMemory)
+            }
+        },
+    }
+}
+
+impl<Theme> graphics::Compositor for Compositor<Theme> {
     type Settings = Settings;
     type Renderer = Renderer<Theme>;
     type Surface = wgpu::Surface;
@@ -127,13 +195,7 @@ impl<Theme> iced_graphics::window::Compositor for Compositor<Theme> {
         settings: Self::Settings,
         compatible_window: Option<&W>,
     ) -> Result<(Self, Self::Renderer), Error> {
-        let compositor = futures::executor::block_on(Self::request(
-            settings,
-            compatible_window,
-        ))
-        .ok_or(Error::GraphicsAdapterNotFound)?;
-
-        let backend = compositor.create_backend();
+        let (compositor, backend) = new(settings, compatible_window)?;
 
         Ok((compositor, Renderer::new(backend)))
     }
@@ -141,11 +203,15 @@ impl<Theme> iced_graphics::window::Compositor for Compositor<Theme> {
     fn create_surface<W: HasRawWindowHandle + HasRawDisplayHandle>(
         &mut self,
         window: &W,
+        width: u32,
+        height: u32,
     ) -> wgpu::Surface {
         #[allow(unsafe_code)]
-        unsafe {
-            self.instance.create_surface(window)
-        }
+        let mut surface = unsafe { self.instance.create_surface(window) };
+
+        self.configure_surface(&mut surface, width, height);
+
+        surface
     }
 
     fn configure_surface(
@@ -184,80 +250,16 @@ impl<Theme> iced_graphics::window::Compositor for Compositor<Theme> {
         background_color: Color,
         overlay: &[T],
     ) -> Result<(), compositor::SurfaceError> {
-        match surface.get_current_texture() {
-            Ok(frame) => {
-                let mut encoder = self.device.create_command_encoder(
-                    &wgpu::CommandEncoderDescriptor {
-                        label: Some("iced_wgpu encoder"),
-                    },
-                );
-
-                let view = &frame
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
-
-                let _ =
-                    encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some(
-                            "iced_wgpu::window::Compositor render pass",
-                        ),
-                        color_attachments: &[Some(
-                            wgpu::RenderPassColorAttachment {
-                                view,
-                                resolve_target: None,
-                                ops: wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear({
-                                        let [r, g, b, a] =
-                                            background_color.into_linear();
-
-                                        wgpu::Color {
-                                            r: f64::from(r),
-                                            g: f64::from(g),
-                                            b: f64::from(b),
-                                            a: f64::from(a),
-                                        }
-                                    }),
-                                    store: true,
-                                },
-                            },
-                        )],
-                        depth_stencil_attachment: None,
-                    });
-
-                renderer.with_primitives(|backend, primitives| {
-                    backend.present(
-                        &self.device,
-                        &mut self.staging_belt,
-                        &mut encoder,
-                        view,
-                        primitives,
-                        viewport,
-                        overlay,
-                    );
-                });
-
-                // Submit work
-                self.staging_belt.finish();
-                let _submission = self.queue.submit(Some(encoder.finish()));
-                frame.present();
-
-                // Recall staging buffers
-                self.staging_belt.recall();
-
-                Ok(())
-            }
-            Err(error) => match error {
-                wgpu::SurfaceError::Timeout => {
-                    Err(compositor::SurfaceError::Timeout)
-                }
-                wgpu::SurfaceError::Outdated => {
-                    Err(compositor::SurfaceError::Outdated)
-                }
-                wgpu::SurfaceError::Lost => Err(compositor::SurfaceError::Lost),
-                wgpu::SurfaceError::OutOfMemory => {
-                    Err(compositor::SurfaceError::OutOfMemory)
-                }
-            },
-        }
+        renderer.with_primitives(|backend, primitives| {
+            present(
+                self,
+                backend,
+                surface,
+                primitives,
+                viewport,
+                background_color,
+                overlay,
+            )
+        })
     }
 }

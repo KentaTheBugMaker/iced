@@ -849,8 +849,11 @@ where
                         layout.children().next().unwrap().bounds();
                     let size = size.unwrap_or_else(|| renderer.default_size());
 
-                    let width =
-                        renderer.measure_width(&editor.contents(), size, font);
+                    let width = renderer.measure_width(
+                        &editor.contents(),
+                        size,
+                        font.unwrap_or(renderer.default_font()),
+                    );
                     let (x, y) = (
                         (text_bounds.x + width) as i32,
                         (text_bounds.y) as i32 + size as i32,
